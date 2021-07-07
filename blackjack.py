@@ -29,7 +29,7 @@ def add_card(score, card):
             new_score = HandScore(hand.points+min(10, card) - 10)
     else: # card is an ace
         if hand.points >= 11: # 11s and up count an ace as 1 (hard or soft)
-            new_score = HandScore(min(hand.points+min(10, card), 22)) # cap busted hands at 22
+            new_score = HandScore(min(hand.points+min(10, card), 22), hand.soft) # cap busted hands at 22
         else: # soft ace
             new_score = HandScore(hand.points+11, True)
 
@@ -39,7 +39,7 @@ def add_card(score, card):
 @dataclass
 class Hand:
     """Class for representing a blackjack hand."""
-    score: HandScore(0, False)
+    score: HandScore = HandScore(0, False)
     cards: [int] = field(default_factory=list)
     doubled: bool = False
 
@@ -49,7 +49,7 @@ class Hand:
         return self
 
 def make_hand(cards):
-    h = Hand(HandScore())
+    h = Hand()
     for c in cards:
         h = h.add_card(c)
     return h
