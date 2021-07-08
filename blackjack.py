@@ -43,10 +43,12 @@ class Hand:
     score: HandScore = HandScore(0, False)
     cards: [int] = field(default_factory=list)
     doubled: bool = False
+    drawn: bool = False
 
     def add_card(self, card):
         self.score = add_card(self.score, card)
         self.cards += [card]
+        self.drawn = True
         return self
 
 def make_hand(cards):
@@ -112,14 +114,14 @@ def player_play_hand(strategy, hand_p, hand_d, deck):
         decision = strategy(hand_p.score, hand_d.score)
         if decision == Action.STAND:
             return hand_p
-        if decision == Action.HIT:
-            hand_p.add_card(deck())
-            if is_busted(hand_p):
-                return hand_p
-        if decision == Action.DOUBLE:
+        if decision == Action.DOUBLE and not hand_p.drawn:
             hand_p.doubled = True
             hand_p.add_card(deck())
             return hand_p
+        if decision in [Action.HIT, Action.DOUBLE]:
+            hand_p.add_card(deck())
+            if is_busted(hand_p):
+                return hand_p
 
 
 def player_hand_outcome(player_hand, dealer_hand):
