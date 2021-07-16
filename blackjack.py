@@ -50,6 +50,14 @@ class Hand:
         self.cards += [card]
         self.drawn = True
         return self
+    
+    def __copy__(self):
+        cls = self.__class__
+        c = cls.__new__(cls)
+        c.__dict__.update(self.__dict__)
+        c.score = copy.copy(self.score)
+        c.cards = copy.copy(self.cards)
+        return c
 
 def make_hand(cards):
     h = Hand()
@@ -181,11 +189,11 @@ def deal_one_round():
 
 # Play multiple strategies on one starting point
 def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card):
-    hand_p = copy.deepcopy(player_hand)
-    hand_d = copy.deepcopy(dealer_hand)
+    hand_p = player_hand
+    hand_d = copy.copy(dealer_hand)
     
     # represent each player as a hand and a strategy
-    players = [(player_play_hand(strat, copy.deepcopy(hand_p), hand_d, deal_card), get_strat_name(strat)) for strat in strats]
+    players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, deal_card), get_strat_name(strat)) for strat in strats]
     
     # dealer
     player_play_hand(strat_dealer, hand_d.add_card(dealer_hole_card), Hand(), deal_card)
