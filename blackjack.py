@@ -131,32 +131,33 @@ def player_play_hand(strategy, hand_p, hand_d, deck):
             if is_busted(hand_p):
                 return hand_p
 
+# First compute the initial outcome, then double it if necessary for a double-down
+def __initial_outcome(player_hand, dealer_hand):
+    if is_blackjack(player_hand):
+        if is_blackjack(dealer_hand):
+            return HandOutcome.PUSH
+        else:
+            return HandOutcome.BLACKJACK
+    if is_busted(player_hand) or is_blackjack(dealer_hand):
+        return HandOutcome.LOSE
+    if is_busted(dealer_hand):
+        return HandOutcome.WIN
+    if player_hand.score.points > dealer_hand.score.points:
+        return HandOutcome.WIN
+    if player_hand.score.points == dealer_hand.score.points:
+        return HandOutcome.PUSH
+    if player_hand.score.points < dealer_hand.score.points:
+        return HandOutcome.LOSE
+
+__outcome_doubler = {HandOutcome.WIN: HandOutcome.WIN_DOUBLE, HandOutcome.LOSE: HandOutcome.LOSE_DOUBLE}
+
 
 def player_hand_outcome(player_hand, dealer_hand):
     # First compute the initial outcome, then double it if necessary for a double-down
-    def initial_outcome():
-        if is_blackjack(player_hand):
-            if is_blackjack(dealer_hand):
-                return HandOutcome.PUSH
-            else:
-                return HandOutcome.BLACKJACK
-        if is_busted(player_hand) or is_blackjack(dealer_hand):
-            return HandOutcome.LOSE
-        if is_busted(dealer_hand):
-            return HandOutcome.WIN
-        if player_hand.score.points > dealer_hand.score.points:
-            return HandOutcome.WIN
-        if player_hand.score.points == dealer_hand.score.points:
-            return HandOutcome.PUSH
-        if player_hand.score.points < dealer_hand.score.points:
-            return HandOutcome.LOSE
-
-    outcome = initial_outcome()
-
-    outcome_doubler = {HandOutcome.WIN: HandOutcome.WIN_DOUBLE, HandOutcome.LOSE: HandOutcome.LOSE_DOUBLE}
-
+    outcome = __initial_outcome(player_hand, dealer_hand)
     if player_hand.doubled:
-        outcome = outcome_doubler.get(outcome) or outcome
+        outcome = __outcome_doubler.get(outcome) or outcome
+
     return outcome
         
 def get_strat_name(strat):
