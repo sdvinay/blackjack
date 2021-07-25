@@ -29,15 +29,24 @@ def run_iteration(n, strat_base, previous_instructions):
 # Rather than generic conditions, just use an array indexed on player and dealer scores
 # Since that's how we're generating our strategy anyway (one square at a time)
 
-def gen_strat_memoized(instructions, strat_base):
-    def strat_memoized(score_p, score_d):
+class Strat_memoized(bj.Strategy):
+    instructions = None
+    strat_base = None
+
+    def decide(self, score_p, score_d):
         k = (repr(score_p), repr(score_d))
-        if k in instructions:
-            return instructions[k]
+        if k in self.instructions:
+            return self.instructions[k]
         else:
-            return strat_base.decide(score_p, score_d)
-    strat_memoized.name = 'memoized'
-    return bj.Strategy_wrapper(strat_memoized)
+            return self.strat_base.decide(score_p, score_d)
+
+    def __init__(self, strat_base, instructions):
+        bj.Strategy.__init__(self, 'memoized')
+        self.strat_base = strat_base
+        self.instructions = instructions
+
+def gen_strat_memoized(instructions, strat_base):
+    return Strat_memoized(strat_base, instructions)
 
 def derive_iterative_strategies(strat_base, iterations):
     n = 50
