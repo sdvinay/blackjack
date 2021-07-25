@@ -80,18 +80,38 @@ class Action(Enum):
     HIT = auto()
     DOUBLE = auto()
     #SPLIT = auto()
+
+class Strategy:
+    def decide(self, score_p, score_d):
+        pass
+
+    name = ''
+
+    def __init__(self, name):
+        self.name = name
+
+class Strategy_wrapper(Strategy):
+    decision_func = None
+    def decide(self, score_p, score_d):
+        return self.decision_func(score_p, score_d)
+    
+    def __init__(self, dec_func):
+        Strategy.__init__(self, dec_func.name)
+        self.decision_func = dec_func
     
 # Most simple/conservative strategy imaginable:
-def strat_nobust(score_p, _):
+def strat_nobust_func(score_p, _):
     if score_p.points > 11:
         return Action.STAND
     else:
         return Action.HIT
         
-strat_nobust.name = 'strat_nobust'
+strat_nobust_func.name = 'strat_nobust'
+
+strat_nobust = Strategy_wrapper(strat_nobust_func)
 
 # Dealer strategy
-def strat_dealer(score_p, _):
+def strat_dealer_func(score_p, _):
     if score_p.points < 17:
         return Action.HIT
     if score_p.points == 16 and score_p.soft:
@@ -99,7 +119,7 @@ def strat_dealer(score_p, _):
     else:
         return Action.STAND
     
-strat_dealer.name='strat_dealer'
+strat_dealer_func.name='strat_dealer'
         
 class HandOutcome(Enum):
     WIN = 1
@@ -109,6 +129,7 @@ class HandOutcome(Enum):
     PUSH = 0
     BLACKJACK = 1.5
 
+strat_dealer = Strategy_wrapper(strat_dealer_func)
 
 # Deck; completely random (i.e., infinite) for now
 
@@ -118,7 +139,7 @@ def deal_card():
 # return the final hand after playing
 def player_play_hand(strategy, hand_p, hand_d, deck):
     while True:
-        decision = strategy(hand_p.score, hand_d.score)
+        decision = strategy.decide(hand_p.score, hand_d.score)
         if decision == Action.STAND:
             return hand_p
         if decision == Action.DOUBLE and not hand_p.drawn:

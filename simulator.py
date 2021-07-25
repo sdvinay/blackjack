@@ -44,9 +44,9 @@ def generate_strat_conditional(strat_base, conditions):
     def strat_cond(score_p, score_d):
         for (condition, action) in conditions:
             if condition(score_p, score_d): return action
-        return strat_base(score_p, score_d)
+        return strat_base.decide(score_p, score_d)
     strat_cond.name = 'strat_cond'
-    return strat_cond
+    return bj.Strategy_wrapper(strat_cond)
 
 
 def gen_cond_strategies(strat_base, condition, actions):
@@ -59,14 +59,16 @@ def gen_cond_strategies(strat_base, condition, actions):
     return strats
 
 
-def strat_simple(score_p, score_d):
+def strat_simple_func(score_p, score_d):
     if score_p.points == 11:  return Action.DOUBLE
     if score_p.points >= 17:  return Action.STAND
     if score_p.points <= 11:  return Action.HIT
     if score_d.points in (range(3,7)):  return Action.STAND
     else:  return Action.HIT
         
-strat_simple.name = 'simple'
+strat_simple_func.name = 'simple'
+
+strat_simple = bj.Strategy_wrapper(strat_simple_func)
 
 def test_cond(score_p, score_d, n, strat_base = strat_simple):
     def cond(p, d):
