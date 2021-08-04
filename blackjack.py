@@ -69,7 +69,7 @@ def is_busted(hand):
     return hand.score.points > 21
 
 def is_blackjack(hand):
-    return hand.score.points==21 and len(hand.cards)==2
+    return hand.score.points==21 and not hand.drawn
 
 
 ## Now define game play
