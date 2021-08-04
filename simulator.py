@@ -3,7 +3,6 @@ import pandas as pd
 import blackjack as bj
 from blackjack import Hand, HandScore, Action, make_hand
 
-ACTIONS = [Action.HIT, Action.STAND, Action.DOUBLE]
 
 def generate_row_from_player(player):
     (strat, hand_p, hand_d, outcome) = player
@@ -73,7 +72,7 @@ strat_simple = bj.Strategy_wrapper(strat_simple_func)
 def test_cond(score_p, score_d, n, strat_base = strat_simple):
     def cond(p, d):
         return p == score_p and d == score_d
-    strats = gen_cond_strategies(strat_base, cond, ACTIONS)
+    strats = gen_cond_strategies(strat_base, cond, Action)
     hand_p = Hand(score_p) 
     hand_d = make_hand([score_d.points if score_d.points< 11 else 1])
     sims = run_n_sim_trials_from_state(strats, hand_p, hand_d, n)
@@ -84,7 +83,7 @@ def find_winning_action(score_p, score_d, n, strat_base = strat_simple):
     outcomes = summary['mean_outcome']
     # Find the winning strategy
     winner = outcomes[outcomes==outcomes.max()].index[0]
-    winning_act = [a for a in ACTIONS if repr(a)==winner][0]
+    winning_act = [a for a in Action if repr(a)==winner][0]
 
     # Convert results to a dict
     output = outcomes.to_dict()
