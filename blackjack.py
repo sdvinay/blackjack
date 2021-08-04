@@ -55,7 +55,6 @@ class Hand:
         cls = self.__class__
         c = cls.__new__(cls)
         c.__dict__.update(self.__dict__)
-        c.score = copy.copy(self.score)
         c.cards = copy.copy(self.cards)
         return c
 
