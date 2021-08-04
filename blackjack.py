@@ -44,6 +44,7 @@ class Hand:
     cards: [int] = field(default_factory=list)
     doubled: bool = False
     drawn: bool = False
+    surrendered: bool = False
 
     def add_card(self, card):
         self.score = add_card(self.score, card)
@@ -76,6 +77,9 @@ def is_blackjack(hand):
 
 # TODO I might want a Flag class later, to provide a set of possible Actions
 class Action(Enum):
+# the order of these doesn't really matter, but ordering from conservative 
+# to aggressive works well for heatmaps and the like
+    SURRENDER = auto()
     STAND = auto()
     HIT = auto()
     DOUBLE = auto()
@@ -128,6 +132,7 @@ class HandOutcome(Enum):
     LOSE_DOUBLE = -2
     PUSH = 0
     BLACKJACK = 1.5
+    SURRENDER = -.5
 
 strat_dealer = Strategy_wrapper(strat_dealer_func)
 
@@ -141,6 +146,9 @@ def player_play_hand(strategy, hand_p, hand_d, deck):
     while True:
         decision = strategy.decide(hand_p.score, hand_d.score)
         if decision == Action.STAND:
+            return hand_p
+        if decision == Action.SURRENDER:
+            hand_p.surrendered = True
             return hand_p
         if decision == Action.DOUBLE and not hand_p.drawn:
             hand_p.doubled = True
@@ -162,6 +170,8 @@ def __initial_outcome(player_hand, dealer_hand):
             return HandOutcome.BLACKJACK
     if is_busted(player_hand) or is_blackjack(dealer_hand):
         return HandOutcome.LOSE
+    if player_hand.surrendered:
+        return HandOutcome.SURRENDER
     if is_busted(dealer_hand):
         return HandOutcome.WIN
     if player_hand.score.points > dealer_hand.score.points:
