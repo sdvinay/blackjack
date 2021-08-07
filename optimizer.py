@@ -61,7 +61,7 @@ def derive_iterative_strategies(strat_base, max_iterations):
         print(f'Starting iteration {i}')
         iter_changed, instructions = run_iteration(n, strat_base, previous_instructions)
         strat_new  = gen_strat_memoized(instructions, strat_base)
-        strat_new.name = f'iter({i+1})'
+        strat_new.__name__ = f'iter({i+1})'
         strategies.append(strat_new)
         previous_instructions = instructions
         strat_base = strat_new

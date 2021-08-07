@@ -12,7 +12,7 @@ def generate_rows_from_round(r):
     return [generate_row_from_player(player) for player in r]
 
 def run_n_sim_trials(strats, n):
-    sims = [generate_rows_from_round(bj.play_one_round(strats)) for _ in range(n)]
+    sims = [generate_rows_from_round(bj.play_one_round(strats, bj.Shoe())) for _ in range(n)]
     results = pd.DataFrame([player for round in sims for player in round])
     results['outcome_value'] = results['outcome'].apply(lambda x: x.value)
     results['outcome_name'] = results['outcome'].apply(lambda x: str(x)[12:])
@@ -20,7 +20,7 @@ def run_n_sim_trials(strats, n):
 
 # TODO reduce duplication with run_n_sim_trials
 def run_n_sim_trials_from_state(strats, hand_p, hand_d, n):
-    sims = [generate_rows_from_round(bj.complete_one_round(strats, hand_p, hand_d, bj.deal_card())) for _ in range(n)]
+    sims = [generate_rows_from_round(bj.complete_one_round(strats, hand_p, hand_d, bj.Shoe().deal(), bj.Shoe())) for _ in range(n)]
     results = pd.DataFrame([player for round in sims for player in round])
     results['outcome_value'] = results['outcome'].apply(lambda x: x.value)
     results['outcome_name'] = results['outcome'].apply(lambda x: str(x)[12:])
@@ -44,14 +44,14 @@ def generate_strat_conditional(strat_base, conditions):
         for (condition, action) in conditions:
             if condition(score_p, score_d): return action
         return strat_base.decide(score_p, score_d)
-    strat_cond.name = 'strat_cond'
+    strat_cond.__name__ = 'strat_cond'
     return bj.Strategy_wrapper(strat_cond)
 
 
 def gen_cond_strategies(strat_base, condition, actions):
     def gen_strat_action(strat_base, condition, action):
         strat = generate_strat_conditional(strat_base, [(condition, action)])
-        strat.name = repr(action)
+        strat.__name__ = repr(action)
         return strat
     
     strats = [gen_strat_action(strat_base, condition, a) for a in actions]
@@ -65,8 +65,6 @@ def strat_simple_func(score_p, score_d):
     if score_d.points in (range(3,7)):  return Action.STAND
     else:  return Action.HIT
         
-strat_simple_func.name = 'simple'
-
 strat_simple = bj.Strategy_wrapper(strat_simple_func)
 
 def test_cond(score_p, score_d, n, strat_base = strat_simple):

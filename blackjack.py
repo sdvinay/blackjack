@@ -100,10 +100,11 @@ class Strategy:
     def decide(self, score_p, score_d):
         pass
 
-    name = ''
-
     def __init__(self, name):
-        self.name = name
+        self.__name__ = name
+    
+    def __repr__(self):
+        return self.__name__
 
 class Strategy_wrapper(Strategy):
     decision_func = None
@@ -111,7 +112,7 @@ class Strategy_wrapper(Strategy):
         return self.decision_func(score_p, score_d)
     
     def __init__(self, dec_func):
-        Strategy.__init__(self, dec_func.name)
+        Strategy.__init__(self, dec_func.__name__)
         self.decision_func = dec_func
     
 # Most simple/conservative strategy imaginable:
@@ -121,7 +122,6 @@ def strat_nobust_func(score_p, _):
     else:
         return Action.HIT
         
-strat_nobust_func.name = 'strat_nobust'
 strat_nobust = Strategy_wrapper(strat_nobust_func)
 
 # Dealer strategy
@@ -133,7 +133,6 @@ def strat_dealer_func(score_p, _):
     else:
         return Action.STAND
     
-strat_dealer_func.name='strat_dealer'
 strat_dealer = Strategy_wrapper(strat_dealer_func)
         
 class HandOutcome(Enum):
@@ -195,8 +194,8 @@ def player_hand_outcome(player_hand, dealer_hand):
     return outcome
         
 def get_strat_name(strat):
-    if hasattr(strat, 'name'):
-        return strat.name
+    if hasattr(strat, '__name__'):
+        return strat.__name__
     return repr(strat)
     
 # Goal is to evaluate strategies, so make comparisons simple
