@@ -122,7 +122,6 @@ def strat_nobust_func(score_p, _):
         return Action.HIT
         
 strat_nobust_func.name = 'strat_nobust'
-
 strat_nobust = Strategy_wrapper(strat_nobust_func)
 
 # Dealer strategy
@@ -135,6 +134,7 @@ def strat_dealer_func(score_p, _):
         return Action.STAND
     
 strat_dealer_func.name='strat_dealer'
+strat_dealer = Strategy_wrapper(strat_dealer_func)
         
 class HandOutcome(Enum):
     WIN = 1
@@ -144,8 +144,6 @@ class HandOutcome(Enum):
     PUSH = 0
     BLACKJACK = 1.5
     SURRENDER = -.5
-
-strat_dealer = Strategy_wrapper(strat_dealer_func)
 
 # return the final hand after playing
 def player_play_hand(strategy, hand_p, hand_d, shoe):
