@@ -75,6 +75,14 @@ def is_blackjack(hand):
     return hand.score.points==21 and not hand.drawn
 
 
+
+# The Shoe holds the cards and deals them
+# For now, just imagine an infinite shoe, where every card is equally likely
+# In the future, we can implement specific shoes (e.g, 6-deck, 2-deck, etc)
+class Shoe:
+    def deal(self):
+        return random.randrange(13)+1
+
 ## Now define game play
 
 
@@ -139,13 +147,8 @@ class HandOutcome(Enum):
 
 strat_dealer = Strategy_wrapper(strat_dealer_func)
 
-# Deck; completely random (i.e., infinite) for now
-
-def deal_card():
-    return random.randrange(13)+1
-
 # return the final hand after playing
-def player_play_hand(strategy, hand_p, hand_d, deck):
+def player_play_hand(strategy, hand_p, hand_d, shoe):
     while True:
         decision = strategy.decide(hand_p.score, hand_d.score)
         if decision == Action.STAND:
@@ -155,10 +158,10 @@ def player_play_hand(strategy, hand_p, hand_d, deck):
             return hand_p
         if decision == Action.DOUBLE and not hand_p.drawn:
             hand_p.doubled = True
-            hand_p.hit(deck())
+            hand_p.hit(shoe.deal())
             return hand_p
         if decision in [Action.HIT, Action.DOUBLE]:
-            hand_p.hit(deck())
+            hand_p.hit(shoe.deal())
             if is_busted(hand_p):
                 return hand_p
 
@@ -211,12 +214,13 @@ def get_strat_name(strat):
 def deal_one_round():
     hand_p = Hand()
     hand_d = Hand()
+    shoe = Shoe()
 
-    hand_p.add_card(deal_card())
-    hand_d.add_card(deal_card())
-    hand_p.add_card(deal_card())
+    hand_p.add_card(shoe.deal())
+    hand_d.add_card(shoe.deal())
+    hand_p.add_card(shoe.deal())
     
-    dealer_hole_card = deal_card()
+    dealer_hole_card = shoe.deal()
     
     return hand_p, hand_d, dealer_hole_card
 
@@ -225,12 +229,13 @@ def deal_one_round():
 def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card):
     hand_p = player_hand
     hand_d = copy.copy(dealer_hand)
+    shoe = Shoe()
     
     # represent each player as a hand and a strategy
-    players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, deal_card), get_strat_name(strat)) for strat in strats]
+    players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, shoe), get_strat_name(strat)) for strat in strats]
     
     # dealer
-    player_play_hand(strat_dealer, hand_d.add_card(dealer_hole_card), Hand(), deal_card)
+    player_play_hand(strat_dealer, hand_d.add_card(dealer_hole_card), Hand(), shoe)
     
     return [(strat, hand_p, hand_d, player_hand_outcome(hand_p, hand_d)) for (hand_p, strat) in players]
 
