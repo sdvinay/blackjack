@@ -50,6 +50,10 @@ class Hand:
         self.score = add_card(self.score, card)
         self.cards += [card]
         return self
+
+    def hit(self, card):
+        self.add_card(card)
+        self.drawn = True
     
     def __copy__(self):
         cls = self.__class__
@@ -151,12 +155,10 @@ def player_play_hand(strategy, hand_p, hand_d, deck):
             return hand_p
         if decision == Action.DOUBLE and not hand_p.drawn:
             hand_p.doubled = True
-            hand_p.add_card(deck())
-            hand_p.drawn = True
+            hand_p.hit(deck())
             return hand_p
         if decision in [Action.HIT, Action.DOUBLE]:
-            hand_p.add_card(deck())
-            hand_p.drawn = True
+            hand_p.hit(deck())
             if is_busted(hand_p):
                 return hand_p
 
