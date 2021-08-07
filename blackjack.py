@@ -211,10 +211,9 @@ def get_strat_name(strat):
 # For now, we're using an infinite deck and strategies without knowledge, so
 # the interaction of players/strategies should be a wash
 
-def deal_one_round():
+def deal_one_round(shoe):
     hand_p = Hand()
     hand_d = Hand()
-    shoe = Shoe()
 
     hand_p.add_card(shoe.deal())
     hand_d.add_card(shoe.deal())
@@ -226,10 +225,9 @@ def deal_one_round():
 
 
 # Play multiple strategies on one starting point
-def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card):
+def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card, shoe):
     hand_p = player_hand
     hand_d = copy.copy(dealer_hand)
-    shoe = Shoe()
     
     # represent each player as a hand and a strategy
     players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, shoe), get_strat_name(strat)) for strat in strats]
@@ -240,7 +238,7 @@ def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card):
     return [(strat, hand_p, hand_d, player_hand_outcome(hand_p, hand_d)) for (hand_p, strat) in players]
 
     
-def play_one_round(strats):
-    hand_p, hand_d, dealer_hole_card = deal_one_round()
-    return complete_one_round(strats, hand_p, hand_d, dealer_hole_card)
+def play_one_round(strats, shoe = Shoe()):
+    hand_p, hand_d, dealer_hole_card = deal_one_round(shoe)
+    return complete_one_round(strats, hand_p, hand_d, dealer_hole_card, shoe)
 
