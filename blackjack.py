@@ -221,14 +221,25 @@ def deal_one_round(shoe):
     
     return hand_p, hand_d, dealer_hole_card
 
+class StatefulShoe(Shoe):
+    cards: Sequence[int]
+    def deal(self):
+        return self.cards.pop()
+
+    def __init__(self, cards) -> None:
+        super().__init__()
+        self.cards = cards
 
 # Play multiple strategies on one starting point
 def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card, shoe):
     hand_p = player_hand
     hand_d = copy.copy(dealer_hand)
-    
+
     # represent each player as a hand and a strategy
-    players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, shoe), get_strat_name(strat)) for strat in strats]
+    # each player gets the same set of cards to draw
+    cards = [shoe.deal() for _ in range(10)]
+    this_shoe = StatefulShoe(cards)
+    players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, copy.deepcopy(this_shoe)), get_strat_name(strat)) for strat in strats]
     
     # dealer
     player_play_hand(strat_dealer, hand_d.add_card(dealer_hole_card), Hand(), shoe)
