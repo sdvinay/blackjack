@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 import copy
 import random
+from typing import Sequence
 
 # cards are numbers from 1 to 13
 # the score is capped at 10
@@ -41,7 +42,7 @@ def add_card(score, card):
 class Hand:
     """Class for representing a blackjack hand."""
     score: HandScore = HandScore(0, False)
-    cards: [int] = field(default_factory=list)
+    cards: Sequence[int] = field(default_factory=list)
     doubled: bool = False
     drawn: bool = False
     surrendered: bool = False
