@@ -1,17 +1,18 @@
+from typing import Dict, Sequence, Tuple
 import pandas as pd
 
 import blackjack as bj
-from blackjack import Hand, HandScore, Action, make_hand
+from blackjack import Hand, HandOutcome, HandScore, Action, Strategy, make_hand
 
 
-def generate_row_from_player(player):
+def generate_row_from_player(player: Tuple[Strategy, Hand, Hand, HandOutcome]) -> Dict:
     (strat, hand_p, hand_d, outcome) = player
     return {'strategy': strat, 'hand_start': hand_p.cards[:2], 'dealer_card': hand_d.cards[0], 'hand_end': hand_p.cards, 'dealer_hand': hand_d.cards, 'outcome': outcome}
 
 def generate_rows_from_round(r):
     return [generate_row_from_player(player) for player in r]
 
-def run_n_sim_trials(strats, n):
+def run_n_sim_trials(strats: Sequence[Strategy], n: int) -> pd.DataFrame:
     sims = [generate_rows_from_round(bj.play_one_round(strats, bj.Shoe())) for _ in range(n)]
     results = pd.DataFrame([player for round in sims for player in round])
     results['outcome_value'] = results['outcome'].apply(lambda x: x.value)
@@ -19,14 +20,14 @@ def run_n_sim_trials(strats, n):
     return results
 
 # TODO reduce duplication with run_n_sim_trials
-def run_n_sim_trials_from_state(strats, hand_p, hand_d, n):
+def run_n_sim_trials_from_state(strats: Sequence[Strategy], hand_p: Hand, hand_d: Hand, n: int) -> pd.DataFrame:
     sims = [generate_rows_from_round(bj.complete_one_round(strats, hand_p, hand_d, bj.Shoe().deal(), bj.Shoe())) for _ in range(n)]
     results = pd.DataFrame([player for round in sims for player in round])
     results['outcome_value'] = results['outcome'].apply(lambda x: x.value)
     results['outcome_name'] = results['outcome'].apply(lambda x: str(x)[12:])
     return results
 
-def summarize_totals(sims):
+def summarize_totals(sims: pd.DataFrame) -> pd.DataFrame:
     def outcome_name(x): return x.head(1) # The function name will be used as the column name
     outcome_counts = sims.groupby(['strategy', 'outcome_value'])['outcome_name'].agg([len, outcome_name])
     outcome_summary = outcome_counts.reset_index().set_index('strategy').drop(['outcome_value'], axis=1).pivot(columns=['outcome_name'])
@@ -39,7 +40,7 @@ def summarize_totals(sims):
     
     return outcome_summary
 
-def generate_strat_conditional(strat_base, conditions):
+def generate_strat_conditional(strat_base: Strategy, conditions: Sequence) -> Strategy:
     def strat_cond(score_p, score_d):
         for (condition, action) in conditions:
             if condition(score_p, score_d): return action

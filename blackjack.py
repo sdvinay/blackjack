@@ -4,10 +4,11 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 import copy
 import random
-from typing import Sequence
+from typing import Callable, List, NewType, Sequence, Tuple
 
 # cards are numbers from 1 to 13
 # the score is capped at 10
+Card = NewType('Card', int)
 
 @dataclass
 class HandScore:
@@ -15,14 +16,14 @@ class HandScore:
     points: int = 0
     soft: bool = False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         soft_indicator = 's' if self.soft else 'h'
         return(f'{soft_indicator}{self.points:02}')
 
-    def add_card(self, card):
+    def add_card(self, card: Card) -> 'HandScore':
         return add_card(self, card)
 
-def add_card(score, card):
+def add_card(score: HandScore, card: Card) -> HandScore:
     hand = score
     if card != 1:  
         if (not hand.soft) or (hand.points <= 11): # simple case
@@ -42,17 +43,17 @@ def add_card(score, card):
 class Hand:
     """Class for representing a blackjack hand."""
     score: HandScore = HandScore(0, False)
-    cards: Sequence[int] = field(default_factory=list)
+    cards: List[int] = field(default_factory=list)
     doubled: bool = False
     drawn: bool = False
     surrendered: bool = False
 
-    def add_card(self, card):
+    def add_card(self, card: Card) -> 'Hand':
         self.score = add_card(self.score, card)
         self.cards += [card]
         return self
 
-    def hit(self, card):
+    def hit(self, card: Card) -> None:
         self.add_card(card)
         self.drawn = True
     
@@ -63,16 +64,16 @@ class Hand:
         c.cards = copy.copy(self.cards)
         return c
 
-def make_hand(cards):
+def make_hand(cards: Sequence[Card]) -> Hand:
     h = Hand()
     for c in cards:
         h = h.add_card(c)
     return h
 
-def is_busted(hand):
+def is_busted(hand: Hand) -> bool:
     return hand.score.points > 21
 
-def is_blackjack(hand):
+def is_blackjack(hand: Hand) -> bool:
     return hand.score.points==21 and not hand.drawn
 
 
@@ -81,13 +82,12 @@ def is_blackjack(hand):
 # For now, just imagine an infinite shoe, where every card is equally likely
 # In the future, we can implement specific shoes (e.g, 6-deck, 2-deck, etc)
 class Shoe:
-    def deal(self):
-        return random.randrange(13)+1
+    def deal(self) -> Card:
+        return Card(random.randrange(13)+1)
 
 ## Now define game play
 
 
-# TODO I might want a Flag class later, to provide a set of possible Actions
 class Action(Enum):
 # the order of these doesn't really matter, but ordering from conservative 
 # to aggressive works well for heatmaps and the like
@@ -97,27 +97,30 @@ class Action(Enum):
     DOUBLE = auto()
     #SPLIT = auto()
 
+DecFuncType = Callable[[HandScore, HandScore], Action]
+
 class Strategy:
-    def decide(self, score_p, score_d):
+    def decide(self, score_p: HandScore, score_d: HandScore) -> Action:
         pass
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.__name__ = name
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__name__
 
 class Strategy_wrapper(Strategy):
-    decision_func = None
-    def decide(self, score_p, score_d):
-        return self.decision_func(score_p, score_d)
+    # Need to point to the decision func, so use a list to wrap it
+    decision_func: List[DecFuncType] = field(default_factory=list)
+    def decide(self, score_p: HandScore, score_d: HandScore) -> Action:
+        return self.decision_func[0](score_p, score_d)
     
-    def __init__(self, dec_func):
+    def __init__(self, dec_func: DecFuncType):
         Strategy.__init__(self, dec_func.__name__)
-        self.decision_func = dec_func
+        self.decision_func = [dec_func]
     
 # Most simple/conservative strategy imaginable:
-def strat_nobust_func(score_p, _):
+def strat_nobust_func(score_p: HandScore, _: HandScore) -> Action:
     if score_p.points > 11:
         return Action.STAND
     else:
@@ -126,7 +129,7 @@ def strat_nobust_func(score_p, _):
 strat_nobust = Strategy_wrapper(strat_nobust_func)
 
 # Dealer strategy
-def strat_dealer_func(score_p, _):
+def strat_dealer_func(score_p: HandScore, _: HandScore) -> Action:
     if score_p.points < 17:
         return Action.HIT
     if score_p.points == 16 and score_p.soft:
@@ -146,7 +149,7 @@ class HandOutcome(Enum):
     SURRENDER = -.5
 
 # return the final hand after playing
-def player_play_hand(strategy, hand_p, hand_d, shoe):
+def player_play_hand(strategy: Strategy, hand_p: Hand, hand_d: Hand, shoe: Shoe) -> Hand:
     while True:
         decision = strategy.decide(hand_p.score, hand_d.score)
         if decision == Action.STAND:
@@ -164,7 +167,7 @@ def player_play_hand(strategy, hand_p, hand_d, shoe):
                 return hand_p
 
 # First compute the initial outcome, then double it if necessary for a double-down
-def __initial_outcome(player_hand, dealer_hand):
+def __initial_outcome(player_hand: Hand, dealer_hand: Hand) -> HandOutcome:
     if is_blackjack(player_hand):
         if is_blackjack(dealer_hand):
             return HandOutcome.PUSH
@@ -180,13 +183,13 @@ def __initial_outcome(player_hand, dealer_hand):
         return HandOutcome.WIN
     if player_hand.score.points == dealer_hand.score.points:
         return HandOutcome.PUSH
-    if player_hand.score.points < dealer_hand.score.points:
-        return HandOutcome.LOSE
+    #if player_hand.score.points < dealer_hand.score.points:
+    return HandOutcome.LOSE
 
 __outcome_doubler = {HandOutcome.WIN: HandOutcome.WIN_DOUBLE, HandOutcome.LOSE: HandOutcome.LOSE_DOUBLE}
 
 
-def player_hand_outcome(player_hand, dealer_hand):
+def player_hand_outcome(player_hand: Hand, dealer_hand: Hand) -> HandOutcome:
     # First compute the initial outcome, then double it if necessary for a double-down
     outcome = __initial_outcome(player_hand, dealer_hand)
     if player_hand.doubled:
@@ -194,7 +197,7 @@ def player_hand_outcome(player_hand, dealer_hand):
 
     return outcome
         
-def get_strat_name(strat):
+def get_strat_name(strat: Strategy) -> str:
     if hasattr(strat, '__name__'):
         return strat.__name__
     return repr(strat)
@@ -209,7 +212,7 @@ def get_strat_name(strat):
 # For now, we're using an infinite deck and strategies without knowledge, so
 # the interaction of players/strategies should be a wash
 
-def deal_one_round(shoe):
+def deal_one_round(shoe: Shoe) -> Tuple[Hand, Hand, Card]:
     hand_p = Hand()
     hand_d = Hand()
 
@@ -238,7 +241,7 @@ class StatefulShoe(Shoe):
         return c
 
 # Play multiple strategies on one starting point
-def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card, shoe):
+def complete_one_round(strats: Sequence[Strategy], player_hand: Hand, dealer_hand: Hand, dealer_hole_card: Card, shoe: Shoe):
     hand_p = player_hand
     hand_d = copy.copy(dealer_hand)
 
@@ -254,7 +257,7 @@ def complete_one_round(strats, player_hand, dealer_hand, dealer_hole_card, shoe)
     return [(strat, hand_p, hand_d, player_hand_outcome(hand_p, hand_d)) for (hand_p, strat) in players]
 
     
-def play_one_round(strats, shoe = Shoe()):
+def play_one_round(strats: Sequence[Strategy], shoe: Shoe = Shoe()):
     hand_p, hand_d, dealer_hole_card = deal_one_round(shoe)
     return complete_one_round(strats, hand_p, hand_d, dealer_hole_card, shoe)
 
