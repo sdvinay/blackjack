@@ -224,7 +224,10 @@ def deal_one_round(shoe: Shoe) -> Tuple[Hand, Hand, Card]:
     
     return hand_p, hand_d, dealer_hole_card
 
-class StatefulShoe(Shoe):
+# DisposableShoe takes a set of cards, and deals them in order
+# No shuffling, or re-shuffling or re-setting or anything
+# Useful for "hand mirroring"; form a DisposableShoe with a small number of cards, and make a copy for each player
+class DisposableShoe(Shoe):
     cards: List[Card]
     def deal(self) -> Card:
         return self.cards.pop()
@@ -248,7 +251,7 @@ def complete_one_round(strats: Sequence[Strategy], player_hand: Hand, dealer_han
     # represent each player as a hand and a strategy
     # each player gets the same set of cards to draw
     cards = [shoe.deal() for _ in range(10)]
-    this_shoe = StatefulShoe(cards)
+    this_shoe = DisposableShoe(cards)
     players = [(player_play_hand(strat, copy.copy(hand_p), hand_d, copy.copy(this_shoe)), get_strat_name(strat)) for strat in strats]
     
     # dealer
