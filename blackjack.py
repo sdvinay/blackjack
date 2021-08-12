@@ -225,15 +225,15 @@ def deal_one_round(shoe: Shoe) -> Tuple[Hand, Hand, Card]:
     return hand_p, hand_d, dealer_hole_card
 
 class StatefulShoe(Shoe):
-    cards: Sequence[int]
-    def deal(self):
+    cards: List[Card]
+    def deal(self) -> Card:
         return self.cards.pop()
 
-    def __init__(self, cards) -> None:
+    def __init__(self, cards: List[Card]) -> None:
         super().__init__()
         self.cards = cards
     
-    def __copy__(self):
+    def __copy__(self) -> 'StatefulShoe':
         cls = self.__class__
         c = cls.__new__(cls)
         c.__dict__.update(self.__dict__)
