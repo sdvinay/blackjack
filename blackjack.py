@@ -85,6 +85,9 @@ class Shoe:
     def deal(self) -> Card:
         return Card(random.randrange(13)+1)
 
+    def shuffle(self) -> None:
+        pass
+
 ## Now define game play
 
 
