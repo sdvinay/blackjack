@@ -12,20 +12,20 @@ def generate_row_from_player(player: Tuple[Strategy, Hand, Hand, HandOutcome]) -
 def generate_rows_from_round(r):
     return [generate_row_from_player(player) for player in r]
 
-def run_n_sim_trials(strats: Sequence[Strategy], n: int) -> pd.DataFrame:
-    sims = [generate_rows_from_round(bj.play_one_round(strats, bj.Shoe())) for _ in range(n)]
+
+# Run n simulated trials
+# Use a starting_state if it is provided
+def run_n_sim_trials(strats: Sequence[Strategy], n: int, starting_state: Tuple[Hand, Hand] = None) -> pd.DataFrame:
+    sims = None
+    if starting_state:
+        sims = [generate_rows_from_round(bj.complete_one_round(strats, starting_state[0], starting_state[1], bj.Shoe().deal(), bj.Shoe())) for _ in range(n)]
+    else:
+        sims = [generate_rows_from_round(bj.play_one_round(strats, bj.Shoe())) for _ in range(n)]
     results = pd.DataFrame([player for round in sims for player in round])
     results['outcome_value'] = results['outcome'].apply(lambda x: x.value)
     results['outcome_name'] = results['outcome'].apply(lambda x: str(x)[12:])
     return results
 
-# TODO reduce duplication with run_n_sim_trials
-def run_n_sim_trials_from_state(strats: Sequence[Strategy], hand_p: Hand, hand_d: Hand, n: int) -> pd.DataFrame:
-    sims = [generate_rows_from_round(bj.complete_one_round(strats, hand_p, hand_d, bj.Shoe().deal(), bj.Shoe())) for _ in range(n)]
-    results = pd.DataFrame([player for round in sims for player in round])
-    results['outcome_value'] = results['outcome'].apply(lambda x: x.value)
-    results['outcome_name'] = results['outcome'].apply(lambda x: str(x)[12:])
-    return results
 
 def summarize_totals(sims: pd.DataFrame) -> pd.DataFrame:
     def outcome_name(x): return x.head(1) # The function name will be used as the column name
@@ -74,7 +74,7 @@ def test_cond(score_p, score_d, n, strat_base = strat_simple):
     strats = gen_cond_strategies(strat_base, cond, Action)
     hand_p = Hand(score_p) 
     hand_d = make_hand([score_d.points if score_d.points< 11 else 1])
-    sims = run_n_sim_trials_from_state(strats, hand_p, hand_d, n)
+    sims = run_n_sim_trials(strats, n, (hand_p, hand_d))
     return cond, summarize_totals(sims)
 
 def find_winning_action(score_p, score_d, n, strat_base = strat_simple):
